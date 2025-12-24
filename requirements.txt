@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+agno
+google-generativeai
+google-cloud-aiplatform
+google-cloud-bigquery
+google-cloud-storage
+pydantic
+python-multipart
+requests
+python-dotenv
+pillow
+numpy
+pandas

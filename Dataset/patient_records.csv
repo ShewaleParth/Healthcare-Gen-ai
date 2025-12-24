@@ -1,0 +1,6 @@
+patient_id,age,weight,disease,medicine,allergy,visit_date,mood_text
+P001,45,72,Pneumonia,Azithromycin,Penicillin,2025-01-10,I feel stressed and tired
+P002,60,68,Tuberculosis,Rifampicin,None,2025-01-11,I feel hopeless
+P003,35,80,Diabetic Retinopathy,Metformin,None,2025-01-12,I'm anxious about my health
+P004,50,75,Pneumonia,Amoxicillin,None,2025-01-13,Breathing feels difficult today
+P005,29,65,Tuberculosis,Isoniazid,Sulfa,2025-01-14,I'm worried about my recovery
