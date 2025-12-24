@@ -1,17 +1,23 @@
 
+
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import hospital, diagnostic, treatment, mental_health
+from app.routes import hospital, diagnosis, treatment, mental_health
+from app.config import Config
 import os
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
+# Perform startup validation
+Config.startup_check()
+
 app = FastAPI(
-    title="GenAI Healthcare Copilot",
-    description="Agentic AI backend for diagnostics, treatment & hospital optimization",
-    version="1.0.0"
+    title="Aarogya AI - Healthcare Intelligence System",
+    description="Multi-agent AI system for diagnostics, treatment, mental health & hospital optimization",
+    version="2.0.0"
 )
 
 # Add CORS middleware
@@ -33,6 +39,7 @@ def health_check():
 
 # Register API Routers
 app.include_router(hospital.router, prefix="/api/v1/hospital", tags=["Hospital"])
-app.include_router(diagnostic.router, prefix="/api/v1/diagnostic", tags=["Diagnostic"])
+app.include_router(diagnosis.router, prefix="/api/v1/diagnostic", tags=["Diagnostic"])
 app.include_router(treatment.router, prefix="/api/v1/treatment", tags=["Treatment"])
 app.include_router(mental_health.router, prefix="/api/v1/mental-health", tags=["Mental Health"])
+

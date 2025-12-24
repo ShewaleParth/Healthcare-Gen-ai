@@ -1,0 +1,92 @@
+{
+    "diagnostic_cases": [
+        {
+            "id": "pneumonia_xray",
+            "title": "Chest X-Ray - Pneumonia Detection",
+            "description": "45-year-old patient with fever, cough, and difficulty breathing",
+            "image_url": "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=800",
+            "expected_findings": "Consolidation in right lower lobe consistent with bacterial pneumonia. Increased opacity and air bronchograms visible.",
+            "confidence": "High"
+        },
+        {
+            "id": "diabetic_retinopathy",
+            "title": "Retinal Scan - Diabetic Retinopathy",
+            "description": "62-year-old diabetic patient, routine eye screening",
+            "image_url": "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800",
+            "expected_findings": "Microaneurysms and hard exudates present. Moderate non-proliferative diabetic retinopathy detected.",
+            "confidence": "Medium-High"
+        },
+        {
+            "id": "bone_fracture",
+            "title": "X-Ray - Wrist Fracture",
+            "description": "28-year-old patient after fall, wrist pain and swelling",
+            "image_url": "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=800",
+            "expected_findings": "Distal radius fracture (Colles' fracture) with dorsal angulation. No displacement noted.",
+            "confidence": "High"
+        }
+    ],
+    "treatment_cases": [
+        {
+            "id": "hypertension_diabetes",
+            "title": "Hypertension with Diabetes",
+            "patient_data": {
+                "age": 58,
+                "weight": 82,
+                "condition": "Hypertension Stage 2",
+                "history": "Type 2 Diabetes (10 years), High cholesterol",
+                "current_meds": "Metformin 1000mg BD, Atorvastatin 20mg",
+                "allergies": "Penicillin, Sulfa drugs"
+            },
+            "expected_warnings": "Drug interaction check required. ACE inhibitors preferred for diabetic patients."
+        },
+        {
+            "id": "asthma_acute",
+            "title": "Acute Asthma Exacerbation",
+            "patient_data": {
+                "age": 34,
+                "weight": 68,
+                "condition": "Acute Asthma Attack",
+                "history": "Chronic asthma, seasonal allergies",
+                "current_meds": "Albuterol inhaler PRN",
+                "allergies": "Aspirin (causes bronchospasm)"
+            },
+            "expected_warnings": "Avoid NSAIDs. Consider oral corticosteroids for severe exacerbation."
+        }
+    ],
+    "mental_health_scenarios": [
+        {
+            "id": "anxiety_work",
+            "title": "Work-Related Anxiety",
+            "messages": [
+                "I've been feeling really anxious about work lately",
+                "I can't sleep at night thinking about deadlines",
+                "Sometimes I feel overwhelmed and don't know what to do"
+            ],
+            "expected_risk": "MODERATE",
+            "expected_response": "Supportive CBT-based response with coping strategies"
+        },
+        {
+            "id": "crisis_suicidal",
+            "title": "Crisis - Suicidal Ideation (DEMO ONLY)",
+            "messages": [
+                "I don't see the point in going on anymore",
+                "I've been thinking about ending my life"
+            ],
+            "expected_risk": "CRITICAL",
+            "expected_response": "EMERGENCY PROTOCOL ACTIVATED with hotline numbers"
+        }
+    ],
+    "hospital_scenarios": [
+        {
+            "id": "morning_rush",
+            "title": "Morning Rush Hour Simulation",
+            "description": "Typical Monday morning with high OPD load and scheduled surgeries",
+            "peak_hours": [
+                "09:00",
+                "10:00",
+                "11:00"
+            ],
+            "expected_recommendations": "Increase OPD counters, deploy additional nursing staff"
+        }
+    ]
+}

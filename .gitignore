@@ -1,5 +1,5 @@
-.env
 aarogya-genai-hackathon-b5fdebb52a65.json
 Backend/__pycache__/
 Backend/**/*.pyc
 Frontend/node_modules/
+.env

@@ -1,41 +1,30 @@
-from agno.agent import Agent
-from agno.models.google import Gemini
+from app.utils.groq_client import groq_client
+from app.config import Config
 import random
-from datetime import datetime, timedelta
-import os
-from dotenv import load_dotenv
-from app.services.vertex_ai_service import vertex_ai_service
-from app.services.bigquery_service import bigquery_service
+from datetime import datetime
+import json
+import logging
 
-# Load environment variables
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 class HospitalAgent:
+    """Hospital Operations Optimization Agent using Groq API"""
+    
     def __init__(self):
-        self.agent = Agent(
-            model=Gemini(id="gemini-2.0-flash-exp", api_key=os.getenv("GOOGLE_API_KEY")),
-            description="You are an expert Hospital Operations Manager and Optimization AI.",
-            instructions=[
-                "Your goal is to optimize hospital workflows, reduce waiting times, and manage resources efficiently.",
-                "Analyze the provided hospital data (OPD visits, surgery schedules, pharmacy inventory).",
-                "Predict potential rush hours and bottlenecks.",
-                "Recommend optimal staff allocation (doctors, nurses) for different departments.",
-                "Identify inventory shortages and suggest reordering priorities.",
-                "Output your analysis in a structured, actionable format for the hospital dashboard.",
-                "Always prioritize patient safety and operational efficiency."
-            ],
-            markdown=True
-        )
+        """Initialize hospital agent"""
+        if not groq_client:
+            logger.warning("Groq client not initialized - API key may be missing")
+        self.client = groq_client
 
     def simulate_hospital_data(self):
-        """Generates simulated hospital data for the current day."""
+        """Generates simulated hospital data for the current day"""
         current_time = datetime.now()
         
-        # Simulate OPD Visits (Time-series like data)
+        # Simulate OPD Visits (Time-series data)
         opd_visits = []
-        for hour in range(8, 20): # 8 AM to 8 PM
+        for hour in range(8, 20):  # 8 AM to 8 PM
             visitors = random.randint(10, 50)
-            if hour in [10, 11, 17, 18]: # Peak hours
+            if hour in [10, 11, 17, 18]:  # Peak hours
                 visitors += random.randint(20, 40)
             opd_visits.append({"hour": f"{hour}:00", "visitors": visitors})
 
@@ -59,81 +48,159 @@ class HospitalAgent:
         return {
             "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S"),
             "opd_visits": opd_visits,
-            "surgery_schedule": surgeries,
+            "surgeries": surgeries,
             "pharmacy_inventory": inventory
         }
 
-    def analyze_situation(self):
-        """
-        Simulates data collection and utilizes the Agent to predict and optimize.
-        Matches 'Hospital Workflow Optimization' Module 4.
-        """
-        data = self.simulate_hospital_data()
+    def optimize_hospital_operations(self):
+        """Analyzes hospital data and provides optimization recommendations"""
         
-        prompt = f"""
-        Here is the current hospital status data:
+        # Get simulated data
+        hospital_data = self.simulate_hospital_data()
         
-        Timestamp: {data['timestamp']}
+        # Prepare data summary for AI analysis
+        data_summary = f"""
+**Hospital Operations Data** (Generated: {hospital_data['timestamp']})
+
+**OPD Patient Flow:**
+- Total visits today: {sum(v['visitors'] for v in hospital_data['opd_visits'])} patients
+- Peak hours: 10:00-11:00 and 17:00-18:00
+- Hourly breakdown: {json.dumps(hospital_data['opd_visits'], indent=2)}
+
+**Surgery Schedule:**
+{json.dumps(hospital_data['surgeries'], indent=2)}
+- Total surgeries scheduled: {sum(s['count'] for s in hospital_data['surgeries'])}
+
+**Pharmacy Inventory Status:**
+{json.dumps(hospital_data['pharmacy_inventory'], indent=2)}
+- Low stock items: {[item['item'] for item in hospital_data['pharmacy_inventory'] if item['stock'] < item['threshold']]}
+"""
         
-        1. **OPD Visits Forecast (Next 12 Hours)**:
-        {data['opd_visits']}
+        system_prompt = """You are an expert Hospital Operations Manager and Optimization AI.
         
-        2. **Surgery Schedule**:
-        {data['surgery_schedule']}
+Your role:
+- Analyze hospital data and identify bottlenecks
+- Optimize patient flow and resource allocation
+- Predict peak hours and staffing needs
+- Manage inventory and prevent stockouts
+- Provide actionable, data-driven recommendations
+
+Always prioritize patient safety and operational efficiency."""
+
+        user_prompt = f"""
+Analyze the following hospital data and provide comprehensive recommendations:
+
+{data_summary}
+
+**Please provide:**
+
+1. **Patient Flow Optimization**
+   - Identify peak hours and bottlenecks
+   - Recommend staff allocation for different time slots
+   - Suggest strategies to reduce wait times
+
+2. **Surgery Department Efficiency**
+   - Analyze surgery load and OR utilization
+   - Recommend optimal scheduling
+   - Identify potential conflicts or overload
+
+3. **Inventory Management**
+   - Flag critical low-stock items
+   - Prioritize reordering based on urgency
+   - Suggest optimal stock levels
+
+4. **Resource Allocation**
+   - Recommend doctor and nurse staffing levels
+   - Suggest department-wise resource distribution
+   - Identify areas needing immediate attention
+
+5. **Actionable Recommendations**
+   - Top 3 immediate actions needed
+   - Long-term optimization strategies
+   - Risk mitigation measures
+
+Format your response in clear, professional markdown suitable for hospital administrators.
+"""
         
-        3. **Pharmacy Inventory Status**:
-        {data['pharmacy_inventory']}
-        
-        Based on this data, please provide a 'Hospital Operations Optimization Report' containing:
-        
-        *   **Rush Hour Prediction**: Identify specifically when the hospital will be busiest and why.
-        *   **Staffing Recommendations**: Suggest how many doctors/nurses are needed for OPD vs Surgeries based on load.
-        *   **Inventory Alerts**: List any items below threshold that need immediate ordering.
-        *   **Operational Advice**: One key strategy to improve flow today (e.g., 'Open extra counter at 10 AM').
-        """
+        if not self.client:
+            # Fallback response when API is not available
+            return {
+                "analysis": Config.ERROR_MESSAGES["no_api_key"],
+                "raw_data": hospital_data,
+                "success": False,
+                "error": "no_api_key"
+            }
         
         try:
-            # Get response from the agent
-            response = self.agent.run(prompt)
-            analysis = response.content
-        except Exception as e:
-            # Fallback response if API fails (rate limit, network issues, etc.)
-            error_msg = str(e)
-            if "429" in error_msg or "Too Many Requests" in error_msg:
-                analysis = """
-## ⚠️ API Rate Limit Reached
+            # Call Groq API using centralized client
+            response = self.client.chat_completion(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                agent_type="hospital"
+            )
+            
+            if response["success"]:
+                # Format the complete response
+                formatted_response = f"""
+## 🏥 Hospital Operations Optimization Report
 
-**Note**: The Gemini API rate limit has been exceeded. Showing simulated analysis.
+**Generated**: {hospital_data['timestamp']}
+**Model**: {response['model']}
+{' (Fallback)' if response.get('fallback') else ''}
 
-### Rush Hour Prediction
-Based on the OPD data, expect peak patient flow between **10:00-12:00** and **17:00-19:00**. 
-These times typically see 30-40% higher visitor counts.
-
-### Staffing Recommendations
-- **OPD Department**: Deploy 8-10 doctors during peak hours
-- **Surgery Department**: Maintain 5-6 surgeons for scheduled procedures
-- **Nursing Staff**: Increase by 20% during rush hours
-
-### Inventory Alerts
-""" + "\n".join([f"- **{item['item']}**: Stock at {item['stock']} units (Threshold: {item['threshold']})" 
-                 for item in data['pharmacy_inventory'] if item['stock'] < item['threshold']]) + """
-
-### Operational Advice
-**Key Strategy**: Open additional registration counters at 9:30 AM to handle the morning rush efficiently.
+{response['content']}
 
 ---
-*To get AI-powered analysis, please wait a few minutes and try again, or upgrade your API quota.*
+**Analysis Method**: Groq AI ({response['model']})
+**Tokens Used**: {response['usage']['total_tokens']}
+**Data Source**: Real-time hospital operations simulation
 """
+                
+                return {
+                    "analysis": formatted_response,
+                    "raw_data": hospital_data,
+                    "success": True,
+                    "model_used": response['model'],
+                    "tokens_used": response['usage']['total_tokens']
+                }
             else:
-                analysis = f"**Error**: Unable to generate AI analysis. {error_msg}"
-        
-        return {
-            "raw_data": data,
-            "analysis": analysis
-        }
+                # API call failed
+                return {
+                    "analysis": response.get("message", Config.ERROR_MESSAGES["model_error"]),
+                    "raw_data": hospital_data,
+                    "success": False,
+                    "error": response.get("error", "unknown")
+                }
+                
+        except Exception as e:
+            logger.error(f"Hospital optimization failed: {e}")
+            return {
+                "analysis": f"""
+## ⚠️ Hospital Operations Analysis Unavailable
+
+**Error**: {str(e)}
+
+**Troubleshooting**:
+1. Check your Groq API key in .env file
+2. Verify internet connection
+3. Check Groq service status at https://status.groq.com
+
+**Simulated Data Available**:
+The system has generated hospital data but cannot provide AI analysis at this time.
+Please check the raw data section for current hospital metrics.
+""",
+                "raw_data": hospital_data,
+                "success": False,
+                "error": str(e)
+            }
 
 if __name__ == "__main__":
-    hospital_agent = HospitalAgent()
-    result = hospital_agent.analyze_situation()
-    print("Simulated Data:", result["raw_data"])
-    print("\nAgent Analysis:\n", result["analysis"])
+    agent = HospitalAgent()
+    result = agent.optimize_hospital_operations()
+    print(result["analysis"])
+    if result["success"]:
+        print(f"\n✅ Success! Tokens used: {result['tokens_used']}")
+    else:
+        print(f"\n❌ Error: {result.get('error', 'Unknown')}")

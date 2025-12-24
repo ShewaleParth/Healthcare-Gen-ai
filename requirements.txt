@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 agno
+groq
 google-generativeai
 google-cloud-aiplatform
 google-cloud-bigquery
@@ -12,3 +13,13 @@ python-dotenv
 pillow
 numpy
 pandas
+
+# ML Dependencies for Pneumonia Detection
+torch>=2.0.0
+torchvision>=0.15.0
+efficientnet-pytorch
+timm
+opencv-python-headless
+matplotlib
+scikit-learn
+scipy
