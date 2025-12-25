@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import hospital, diagnostic, treatment, mental_health
+from app.api.routes import hospital, diagnostic, treatment, mental_health, user_health
 import os
 from dotenv import load_dotenv
 
@@ -36,3 +36,5 @@ app.include_router(hospital.router, prefix="/api/v1/hospital", tags=["Hospital"]
 app.include_router(diagnostic.router, prefix="/api/v1/diagnostic", tags=["Diagnostic"])
 app.include_router(treatment.router, prefix="/api/v1/treatment", tags=["Treatment"])
 app.include_router(mental_health.router, prefix="/api/v1/mental-health", tags=["Mental Health"])
+app.include_router(user_health.router, prefix="/api/v1/user", tags=["User Health"])
+

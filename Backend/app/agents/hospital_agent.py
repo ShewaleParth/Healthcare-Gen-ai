@@ -27,16 +27,18 @@ Responsibilities:
 Provide responses in markdown format for clarity."""
 
     def simulate_hospital_data(self):
-        """Generates simulated hospital data for the current day."""
+        """Generates comprehensive simulated hospital data for the dashboard."""
         current_time = datetime.now()
         
         # Simulate OPD Visits (Time-series like data)
         opd_visits = []
+        total_opd_today = 0
         for hour in range(8, 20): # 8 AM to 8 PM
             visitors = random.randint(10, 50)
             if hour in [10, 11, 17, 18]: # Peak hours
                 visitors += random.randint(20, 40)
             opd_visits.append({"hour": f"{hour}:00", "visitors": visitors})
+            total_opd_today += visitors
 
         # Simulate Surgery Schedule
         surgeries = [
@@ -55,11 +57,123 @@ Provide responses in markdown format for clarity."""
             {"item": "Anesthetics", "stock": random.randint(2, 20), "threshold": 10},
         ]
 
+        # NEW: KPI Metrics
+        total_beds = 250
+        occupied_beds = random.randint(150, 230)
+        active_emergencies = random.randint(3, 15)
+        avg_wait_time = random.randint(15, 45)  # minutes
+        critical_alerts = len([i for i in inventory if i['stock'] < i['threshold']])
+        
+        kpi_metrics = {
+            "total_patients_today": total_opd_today + random.randint(20, 50),  # OPD + Admissions
+            "active_emergencies": active_emergencies,
+            "bed_occupancy_rate": round((occupied_beds / total_beds) * 100, 1),
+            "avg_wait_time_mins": avg_wait_time,
+            "critical_alerts": critical_alerts
+        }
+
+        # NEW: Department Metrics
+        departments = [
+            {"name": "Cardiology", "patients": random.randint(15, 45), "capacity": 50, "utilization": 0},
+            {"name": "Orthopedics", "patients": random.randint(20, 40), "capacity": 45, "utilization": 0},
+            {"name": "Pediatrics", "patients": random.randint(25, 50), "capacity": 60, "utilization": 0},
+            {"name": "Emergency", "patients": active_emergencies, "capacity": 20, "utilization": 0},
+            {"name": "General Medicine", "patients": random.randint(30, 60), "capacity": 70, "utilization": 0},
+        ]
+        
+        for dept in departments:
+            dept["utilization"] = round((dept["patients"] / dept["capacity"]) * 100, 1)
+
+        # NEW: Bed Statistics
+        bed_stats = {
+            "total_beds": total_beds,
+            "occupied_beds": occupied_beds,
+            "available_beds": total_beds - occupied_beds,
+            "icu_beds": {"total": 30, "occupied": random.randint(15, 28)},
+            "general_beds": {"total": 180, "occupied": random.randint(100, 170)},
+            "emergency_beds": {"total": 40, "occupied": random.randint(10, 35)}
+        }
+
+        # NEW: Emergency Room Metrics
+        er_metrics = {
+            "current_patients": active_emergencies,
+            "avg_triage_time_mins": random.randint(5, 15),
+            "critical_cases": random.randint(1, 5),
+            "stable_cases": active_emergencies - random.randint(1, 5),
+            "hourly_arrivals": [
+                {"hour": f"{h}:00", "arrivals": random.randint(1, 8)} 
+                for h in range(max(0, current_time.hour - 6), current_time.hour + 1)
+            ]
+        }
+
+        # NEW: Staff Availability
+        staff_availability = {
+            "doctors": {
+                "on_duty": random.randint(25, 40),
+                "total": 50,
+                "by_department": {
+                    "Cardiology": random.randint(4, 8),
+                    "Orthopedics": random.randint(3, 6),
+                    "Pediatrics": random.randint(5, 9),
+                    "Emergency": random.randint(6, 10),
+                    "General": random.randint(7, 12)
+                }
+            },
+            "nurses": {
+                "on_duty": random.randint(60, 90),
+                "total": 120,
+                "by_shift": {
+                    "morning": random.randint(30, 40),
+                    "evening": random.randint(25, 35),
+                    "night": random.randint(15, 25)
+                }
+            },
+            "specialists": {
+                "available": random.randint(8, 15),
+                "total": 20
+            }
+        }
+
+        # NEW: Historical Trends (Last 7 days)
+        historical_trends = {
+            "daily_patients": [
+                {"day": (current_time - timedelta(days=i)).strftime("%a"), 
+                 "patients": random.randint(200, 400)}
+                for i in range(6, -1, -1)
+            ],
+            "daily_emergencies": [
+                {"day": (current_time - timedelta(days=i)).strftime("%a"), 
+                 "emergencies": random.randint(20, 60)}
+                for i in range(6, -1, -1)
+            ]
+        }
+
+        # NEW: Patient Flow Heatmap Data
+        patient_heatmap = []
+        departments_list = ["Cardiology", "Orthopedics", "Pediatrics", "Emergency", "General"]
+        for hour in range(8, 20):
+            for dept in departments_list:
+                intensity = random.randint(5, 30)
+                if hour in [10, 11, 17, 18]:  # Peak hours
+                    intensity += random.randint(10, 20)
+                patient_heatmap.append({
+                    "hour": f"{hour}:00",
+                    "department": dept,
+                    "patients": intensity
+                })
+
         return {
             "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "kpi_metrics": kpi_metrics,
             "opd_visits": opd_visits,
             "surgery_schedule": surgeries,
-            "pharmacy_inventory": inventory
+            "pharmacy_inventory": inventory,
+            "departments": departments,
+            "bed_stats": bed_stats,
+            "er_metrics": er_metrics,
+            "staff_availability": staff_availability,
+            "historical_trends": historical_trends,
+            "patient_heatmap": patient_heatmap
         }
 
     def analyze_situation(self):
