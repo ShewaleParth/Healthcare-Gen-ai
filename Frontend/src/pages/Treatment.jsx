@@ -6,6 +6,7 @@ import {
     AlertCircle, Info, Download, Share2, Zap
 } from 'lucide-react';
 import { RadialBarChart, RadialBar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
+import MultilingualSpeech from '../components/MultilingualSpeech';
 
 const Treatment = () => {
     const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ const Treatment = () => {
     });
     const [recommendation, setRecommendation] = useState('');
     const [loading, setLoading] = useState(false);
+    const [selectedLanguage, setSelectedLanguage] = useState('en'); // Track selected language
     const [expandedSections, setExpandedSections] = useState({
         treatment: true,
         safety: true,
@@ -29,8 +31,8 @@ const Treatment = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e, language = selectedLanguage) => {
+        e?.preventDefault();
         setLoading(true);
 
         const payload = {
@@ -38,7 +40,8 @@ const Treatment = () => {
             age: parseInt(formData.age),
             weight: parseFloat(formData.weight),
             current_meds: formData.current_meds.split(',').map(s => s.trim()).filter(Boolean),
-            allergies: formData.allergies.split(',').map(s => s.trim()).filter(Boolean)
+            allergies: formData.allergies.split(',').map(s => s.trim()).filter(Boolean),
+            language: language // Add language parameter
         };
 
         try {
@@ -54,6 +57,15 @@ const Treatment = () => {
             setRecommendation('**Error**: Unable to generate treatment recommendations. Please try again.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Handle language change and regenerate report
+    const handleLanguageChange = (newLanguage) => {
+        setSelectedLanguage(newLanguage);
+        if (formData.age && formData.weight && formData.condition && recommendation) {
+            // Regenerate report in new language
+            handleSubmit(null, newLanguage);
         }
     };
 
@@ -361,6 +373,13 @@ const Treatment = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Multilingual Speech */}
+                            <MultilingualSpeech 
+                                text={recommendation} 
+                                className="animate-fade-in" 
+                                onLanguageChange={handleLanguageChange}
+                            />
 
                             {/* ESCALATE Warning if High Risk */}
                             {recommendation.includes('ESCALATE TO DOCTOR') && (

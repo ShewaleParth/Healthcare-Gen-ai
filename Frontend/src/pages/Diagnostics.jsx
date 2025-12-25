@@ -9,6 +9,7 @@ import {
 import { 
     RadialBarChart, RadialBar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell
 } from 'recharts';
+import MultilingualSpeech from '../components/MultilingualSpeech';
 
 const Diagnostics = () => {
     const [file, setFile] = useState(null);
@@ -18,6 +19,7 @@ const Diagnostics = () => {
     const [dragActive, setDragActive] = useState(false);
     const [imageZoom, setImageZoom] = useState(1);
     const [showFullImage, setShowFullImage] = useState(false);
+    const [selectedLanguage, setSelectedLanguage] = useState('en'); // Track selected language
     const [expandedSections, setExpandedSections] = useState({
         findings: true,
         diagnosis: true,
@@ -59,13 +61,14 @@ const Diagnostics = () => {
         setImageZoom(1);
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e, language = selectedLanguage) => {
+        e?.preventDefault();
         if (!file) return;
 
         setLoading(true);
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('language', language); // Add language parameter
 
         try {
             const response = await fetch('http://localhost:8000/api/v1/diagnostic/analyze-image', {
@@ -79,6 +82,15 @@ const Diagnostics = () => {
             setAnalysis('**Error**: Unable to analyze image. Please try again or contact support.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Handle language change and regenerate report
+    const handleLanguageChange = (newLanguage) => {
+        setSelectedLanguage(newLanguage);
+        if (file && analysis) {
+            // Regenerate report in new language
+            handleSubmit(null, newLanguage);
         }
     };
 
@@ -422,6 +434,13 @@ const Diagnostics = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Multilingual Speech */}
+                            <MultilingualSpeech 
+                                text={analysis} 
+                                className="animate-fade-in" 
+                                onLanguageChange={handleLanguageChange}
+                            />
 
                             {/* Lung Region Coverage Map */}
                             {parsedAnalysis.regions && parsedAnalysis.regions.length > 0 ? (

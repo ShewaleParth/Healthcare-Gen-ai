@@ -13,11 +13,19 @@ class PatientData(BaseModel):
     history: Optional[str] = None
     current_meds: Optional[List[str]] = []
     allergies: Optional[List[str]] = []
+    language: Optional[str] = "en"  # Language code: en, hi, mr
 
 @router.post("/recommend-treatment")
 async def recommend_treatment(data: PatientData):
+    """
+    Generate treatment recommendations with multilingual support.
+    
+    Args:
+        data: Patient information including language preference
+    """
     try:
         recommendation = agent.recommend_treatment(data.dict())
-        return {"recommendation": recommendation}
+        return {"recommendation": recommendation, "language": data.language}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+

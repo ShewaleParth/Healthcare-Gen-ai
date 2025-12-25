@@ -24,11 +24,17 @@ Your responsibilities:
 Provide responses in markdown format for clarity."""
         self.vertex_ai = vertex_ai_service
 
-    def analyze_image(self, image_path: str):
+    def analyze_image(self, image_path: str, language: str = "en"):
         """
         Analyzes a medical image using Vertex AI Vision (primary) or Gemini (fallback).
+        
+        Args:
+            image_path: Path to the medical image
+            language: Language code (en, hi, mr) for report generation
         """
-        medical_prompt = """
+        # Language-specific prompts
+        language_instructions = {
+            "en": """
         Analyze this medical image for potential conditions or abnormalities.
         
         Provide:
@@ -39,7 +45,38 @@ Provide responses in markdown format for clarity."""
         5. **Recommendations**: What should the clinician investigate further?
         
         Remember: This is AI-assisted analysis to support, not replace, medical professionals.
+        """,
+            "hi": """
+        इस चिकित्सा छवि का विश्लेषण संभावित स्थितियों या असामान्यताओं के लिए करें।
+        
+        कृपया प्रदान करें:
+        1. **प्राथमिक निष्कर्ष**: आप क्या देखते हैं?
+        2. **संभावित निदान**: यह किन स्थितियों का संकेत दे सकता है?
+        3. **विश्वास स्तर**: आप कितने निश्चित हैं? (उच्च/मध्यम/निम्न)
+        4. **रुचि के क्षेत्र**: चिंता के विशिष्ट क्षेत्रों का वर्णन करें
+        5. **सिफारिशें**: चिकित्सक को आगे क्या जांच करनी चाहिए?
+        
+        याद रखें: यह चिकित्सा पेशेवरों को प्रतिस्थापित करने के लिए नहीं, बल्कि सहायता के लिए AI-सहायता प्राप्त विश्लेषण है।
+        
+        **महत्वपूर्ण**: कृपया पूरी रिपोर्ट हिंदी में लिखें।
+        """,
+            "mr": """
+        संभाव्य परिस्थिती किंवा विकृतींसाठी या वैद्यकीय प्रतिमेचे विश्लेषण करा.
+        
+        कृपया प्रदान करा:
+        1. **प्राथमिक निष्कर्ष**: तुम्हाला काय दिसते?
+        2. **संभाव्य निदान**: हे कोणत्या परिस्थितींचे संकेत देऊ शकते?
+        3. **विश्वास पातळी**: तुम्ही किती निश्चित आहात? (उच्च/मध्यम/कमी)
+        4. **स्वारस्याचे क्षेत्र**: चिंतेच्या विशिष्ट क्षेत्रांचे वर्णन करा
+        5. **शिफारसी**: चिकित्सकांनी पुढे काय तपासले पाहिजे?
+        
+        लक्षात ठेवा: हे वैद्यकीय व्यावसायिकांना बदलण्यासाठी नाही, तर समर्थन करण्यासाठी AI-सहाय्यित विश्लेषण आहे।
+        
+        **महत्त्वाचे**: कृपया संपूर्ण अहवाल मराठीत लिहा.
         """
+        }
+        
+        medical_prompt = language_instructions.get(language, language_instructions["en"])
         
         # Try Vertex AI Vision first
         vertex_result = self.vertex_ai.analyze_medical_image(image_path, medical_prompt)
