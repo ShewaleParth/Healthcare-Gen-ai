@@ -27,6 +27,14 @@ class BigQueryService:
         self.dataset_id = os.getenv("BIGQUERY_DATASET", "aarogya_healthcare")
         self.initialized = False
         
+        # Set credentials if provided, otherwise use ADC
+        credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        if credentials_path and os.path.exists(credentials_path):
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+            print(f"✅ Using credentials from: {credentials_path}")
+        else:
+            print("ℹ️ Using Application Default Credentials (ADC)")
+        
         if BIGQUERY_AVAILABLE and self.project_id != "your-gcp-project-id":
             try:
                 self.client = bigquery.Client(project=self.project_id)

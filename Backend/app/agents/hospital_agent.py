@@ -1,5 +1,4 @@
-from agno.agent import Agent
-from agno.models.google import Gemini
+from app.util.smart_ai_client import smart_ai_client
 import random
 from datetime import datetime, timedelta
 import os
@@ -12,20 +11,20 @@ load_dotenv()
 
 class HospitalAgent:
     def __init__(self):
-        self.agent = Agent(
-            model=Gemini(id="gemini-2.0-flash-exp", api_key=os.getenv("GOOGLE_API_KEY")),
-            description="You are an expert Hospital Operations Manager and Optimization AI.",
-            instructions=[
-                "Your goal is to optimize hospital workflows, reduce waiting times, and manage resources efficiently.",
-                "Analyze the provided hospital data (OPD visits, surgery schedules, pharmacy inventory).",
-                "Predict potential rush hours and bottlenecks.",
-                "Recommend optimal staff allocation (doctors, nurses) for different departments.",
-                "Identify inventory shortages and suggest reordering priorities.",
-                "Output your analysis in a structured, actionable format for the hospital dashboard.",
-                "Always prioritize patient safety and operational efficiency."
-            ],
-            markdown=True
-        )
+        self.client = smart_ai_client
+        self.system_message = """You are an expert Hospital Operations Manager and Optimization AI.
+
+Your goal is to optimize hospital workflows, reduce waiting times, and manage resources efficiently.
+
+Responsibilities:
+- Analyze the provided hospital data (OPD visits, surgery schedules, pharmacy inventory).
+- Predict potential rush hours and bottlenecks.
+- Recommend optimal staff allocation (doctors, nurses) for different departments.
+- Identify inventory shortages and suggest reordering priorities.
+- Output your analysis in a structured, actionable format for the hospital dashboard.
+- Always prioritize patient safety and operational efficiency.
+
+Provide responses in markdown format for clarity."""
 
     def simulate_hospital_data(self):
         """Generates simulated hospital data for the current day."""
@@ -93,9 +92,14 @@ class HospitalAgent:
         """
         
         try:
-            # Get response from the agent
-            response = self.agent.run(prompt)
-            analysis = response.content
+            # Get response from the Grok client
+            response = self.client.simple_prompt(
+                prompt=prompt,
+                system_message=self.system_message,
+                temperature=0.7,
+                max_tokens=2048
+            )
+            analysis = response
         except Exception as e:
             # Fallback response if API fails (rate limit, network issues, etc.)
             error_msg = str(e)

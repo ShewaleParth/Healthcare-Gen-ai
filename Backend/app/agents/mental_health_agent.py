@@ -1,5 +1,4 @@
-from agno.agent import Agent
-from agno.models.google import Gemini
+from app.util.smart_ai_client import smart_ai_client
 import os
 from dotenv import load_dotenv
 from typing import List, Dict
@@ -10,20 +9,19 @@ load_dotenv()
 
 class MentalHealthAgent:
     def __init__(self):
-        self.agent = Agent(
-            model=Gemini(id="gemini-2.0-flash-exp", api_key=os.getenv("GOOGLE_API_KEY")),
-            description="You are a compassionate Mental Health Companion and ADK Risk Detector.",
-            instructions=[
-                "Act as a non-judgmental, empathetic listener.",
-                "Use CBT (Cognitive Behavioral Therapy) techniques to guide the user.",
-                "Encourage professional help without being dismissive.",
-                "RISK DETECTION: If the user mentions suicide, self-harm, or severe danger, strictly ignore standard flow and Output: 'EMERGENCY PROTOCOL ACTIVATED'",
-                "Do not diagnose medical conditions.",
-                "Maintain conversation history awareness for context.",
-                "Provide coping strategies and emotional support."
-            ],
-            markdown=True
-        )
+        self.client = smart_ai_client
+        self.system_message = """You are a compassionate Mental Health Companion and ADK Risk Detector.
+
+Your responsibilities:
+- Act as a non-judgmental, empathetic listener.
+- Use CBT (Cognitive Behavioral Therapy) techniques to guide the user.
+- Encourage professional help without being dismissive.
+- RISK DETECTION: If the user mentions suicide, self-harm, or severe danger, strictly ignore standard flow and Output: 'EMERGENCY PROTOCOL ACTIVATED'
+- Do not diagnose medical conditions.
+- Maintain conversation history awareness for context.
+- Provide coping strategies and emotional support.
+
+Provide responses in markdown format for clarity."""
         self.conversation_history = []
         
         # Enhanced risk detection keywords with severity levels
@@ -164,8 +162,13 @@ Risk Level: {risk_assessment['level']}
 Provide a compassionate, supportive response using CBT techniques. 
 If risk level is MODERATE or HIGH, gently encourage professional help while being supportive.
 """
-            response = self.agent.run(prompt)
-            ai_response = escalation_prefix + response.content
+            response = self.client.simple_prompt(
+                prompt=prompt,
+                system_message=self.system_message,
+                temperature=0.8,
+                max_tokens=1024
+            )
+            ai_response = escalation_prefix + response
             
             self.conversation_history.append({"role": "assistant", "content": ai_response})
             return ai_response

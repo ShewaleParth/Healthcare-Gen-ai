@@ -1,5 +1,4 @@
-from agno.agent import Agent
-from agno.models.google import Gemini
+from app.util.smart_ai_client import smart_ai_client
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -10,20 +9,19 @@ load_dotenv()
 
 class DiagnosticAgent:
     def __init__(self):
-        self.agent = Agent(
-            model=Gemini(id="gemini-2.0-flash-exp", api_key=os.getenv("GOOGLE_API_KEY")),
-            description="You are a specialist Medical AI Diagnostic Assistant using Vertex AI Vision.",
-            instructions=[
-                "Analyze the provided medical image (X-ray, MRI, retinal scan, etc.).",
-                "Identify potential abnormalities or diseases with high accuracy.",
-                "Provide a 'Doctor-Friendly Explanation': clear, professional, and concise.",
-                "Highlight specific regions of interest if possible (textual description).",
-                "Include a confidence score and any critical warning signs.",
-                "ALWAYS state: 'This is an AI-assisted analysis. Final diagnosis rests with a medical professional.'",
-                "Mention if Vertex AI Vision or Gemini Vision was used for analysis."
-            ],
-            markdown=True
-        )
+        self.client = smart_ai_client
+        self.system_message = """You are a specialist Medical AI Diagnostic Assistant using advanced vision analysis.
+
+Your responsibilities:
+- Analyze the provided medical image (X-ray, MRI, retinal scan, etc.).
+- Identify potential abnormalities or diseases with high accuracy.
+- Provide a 'Doctor-Friendly Explanation': clear, professional, and concise.
+- Highlight specific regions of interest if possible (textual description).
+- Include a confidence score and any critical warning signs.
+- ALWAYS state: 'This is an AI-assisted analysis. Final diagnosis rests with a medical professional.'
+- Mention that Gemini Vision AI was used for analysis.
+
+Provide responses in markdown format for clarity."""
         self.vertex_ai = vertex_ai_service
 
     def analyze_image(self, image_path: str):
@@ -61,32 +59,19 @@ class DiagnosticAgent:
         
         # Fallback to Gemini Vision
         try:
-            # Read image file and encode it
-            import base64
-            with open(image_path, 'rb') as image_file:
-                image_data = base64.b64encode(image_file.read()).decode('utf-8')
-            
-            # Use Gemini directly for vision analysis
-            import google.generativeai as genai
-            genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-            
-            # Use Gemini Pro Vision model
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            
-            # Load image
-            from PIL import Image
-            img = Image.open(image_path)
-            
-            response = model.generate_content([medical_prompt, img])
+            response = self.client.vision_analysis(
+                image_path=image_path,
+                prompt=medical_prompt,
+                system_message=self.system_message
+            )
             
             analysis = f"""
 ## 🔬 Medical Image Analysis
 
-{response.text}
+{response}
 
 ---
-**Analysis Method**: Gemini 1.5 Flash Vision (Fallback Mode)
-**Note**: For production deployment, integrate Vertex AI Vision for specialized medical imaging analysis.
+**Analysis Method**: Gemini Vision AI
 **Disclaimer**: This is an AI-assisted analysis. Final diagnosis must be made by a qualified medical professional.
 """
             return analysis
@@ -105,10 +90,14 @@ Based on the uploaded medical image, this system would normally provide:
 - Confidence scoring
 - Clinical recommendations
 
-**To enable full analysis**:
-1. Configure Vertex AI Vision in `.env` file
-2. Ensure Google Cloud credentials are set up
-3. Or wait for API rate limits to reset
+**To enable full analysis with Vertex AI**:
+1. Ensure GCP_PROJECT_ID is set in `.env` file
+2. Set GOOGLE_APPLICATION_CREDENTIALS to your service account JSON file path
+3. Enable Vertex AI API in your GCP project
+4. Verify the service account has proper permissions
+5. Check that the image file is valid and readable
+
+**Note**: This system uses Vertex AI (OAuth/Service Account) for vision analysis.
 
 **Disclaimer**: This is a demonstration. Always consult qualified medical professionals for diagnosis.
 """
